@@ -1,0 +1,9 @@
+{
+  "type": "dimensional_itemgate:recipe",
+  "ingredients": [
+    {
+      "tag": "forge:chests"
+    }
+  ],
+  "dimension": "minecraft:the_nether"
+}

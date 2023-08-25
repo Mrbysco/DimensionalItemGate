@@ -1,0 +1,10 @@
+{
+  "type": "dimensional_itemgate:recipe",
+  "ingredients": [
+    {
+      "item": "minecraft:ender_pearl"
+    }
+  ],
+  "required": "true",
+  "dimension": "minecraft:the_end"
+}
