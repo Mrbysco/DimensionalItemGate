@@ -5,7 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.mrbysco.dimensiongate.DimensionalItemGate;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -112,12 +113,12 @@ public class GatedItemRecipe implements Recipe<Container> {
 	}
 
 	@Override
-	public ItemStack assemble(Container inventory) {
-		return getResultItem().copy();
+	public ItemStack assemble(Container inventory, RegistryAccess registryAccess) {
+		return getResultItem(registryAccess).copy();
 	}
 
 	@Override
-	public ItemStack getResultItem() {
+	public ItemStack getResultItem(RegistryAccess registryAccess) {
 		return result;
 	}
 
@@ -161,7 +162,7 @@ public class GatedItemRecipe implements Recipe<Container> {
 				if (dimensionLocation == null) {
 					throw new JsonParseException("Dimension" + dimension + " defined in Item Gate Recipe is not valid!");
 				}
-				ResourceKey<Level> dimensionKey = ResourceKey.create(Registry.DIMENSION_REGISTRY, dimensionLocation);
+				ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, dimensionLocation);
 				boolean required = GsonHelper.getAsBoolean(jsonObject, "required", false);
 				return new GatedItemRecipe(recipeId, nonnulllist, dimensionKey, required);
 			}
@@ -187,7 +188,7 @@ public class GatedItemRecipe implements Recipe<Container> {
 				nonnulllist.set(j, Ingredient.fromNetwork(buffer));
 			}
 
-			ResourceKey<Level> dimension = buffer.readResourceKey(Registry.DIMENSION_REGISTRY);
+			ResourceKey<Level> dimension = buffer.readResourceKey(Registries.DIMENSION);
 			boolean required = buffer.readBoolean();
 			return new GatedItemRecipe(recipeId, nonnulllist, dimension, required);
 		}

@@ -39,7 +39,7 @@ public class DimensionalItemGate {
 	}
 
 	private void travelToDimension(EntityTravelToDimensionEvent event) {
-		Level level = event.getEntity().level;
+		Level level = event.getEntity().level();
 		List<ItemStack> stackList = new ArrayList<>();
 		if (event.getEntity() instanceof ItemEntity itemEntity) {
 			stackList.add(itemEntity.getItem());
