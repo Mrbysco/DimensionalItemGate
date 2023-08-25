@@ -1,11 +1,13 @@
 modLoader="javafml"
 loaderVersion="[43,)"
+issueTrackerURL="https://github.com/Mrbysco/DimensionalItemGate/issues"
 license="MIT"
 
 [[mods]]
 modId="dimensional_itemgate"
 version="${file.jarVersion}"
 displayName="Dimensional ItemGate"
+displayURL="https://www.curseforge.com/minecraft/mc-mods/dimensional-itemgate"
 authors="Mrbysco, ShyNieke"
 description='''
 You can't bring <Netherite Hoe> to this dimension!
