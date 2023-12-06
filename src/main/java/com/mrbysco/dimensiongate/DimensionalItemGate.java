@@ -11,13 +11,14 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.EntityTravelToDimensionEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ public class DimensionalItemGate {
 		GatedRecipes.RECIPE_TYPES.register(eventBus);
 		GatedRecipes.RECIPE_SERIALIZERS.register(eventBus);
 
-		MinecraftForge.EVENT_BUS.addListener(this::travelToDimension);
+		NeoForge.EVENT_BUS.addListener(this::travelToDimension);
 	}
 
 	private void travelToDimension(EntityTravelToDimensionEvent event) {
@@ -71,12 +72,13 @@ public class DimensionalItemGate {
 			stackList.addAll(containerEntity.getItemStacks());
 		}
 
-		List<GatedItemRecipe> recipes = new ArrayList<>(level.getRecipeManager().getAllRecipesFor(GatedRecipes.GATED_ITEM_TYPE.get()));
-		recipes.removeIf(recipe -> !recipe.getDimension().location().equals(event.getDimension().location()));
+		List<RecipeHolder<GatedItemRecipe>> recipes = new ArrayList<>(level.getRecipeManager().getAllRecipesFor(GatedRecipes.GATED_ITEM_TYPE.get()));
+		recipes.removeIf(recipe -> !recipe.value().getDimension().location().equals(event.getDimension().location()));
 
-		for (GatedItemRecipe recipe : recipes) {
-			if (recipe.isRequired()) {
-				List<ItemStack> missingStacks = recipe.getMissingStacks(stackList, recipe);
+		for (RecipeHolder<GatedItemRecipe> recipe : recipes) {
+			GatedItemRecipe gatedRecipe = recipe.value();
+			if (gatedRecipe.isRequired()) {
+				List<ItemStack> missingStacks = gatedRecipe.getMissingStacks(stackList, gatedRecipe);
 				if (!missingStacks.isEmpty()) {
 					if (event.getEntity() instanceof Player player) {
 						ItemStack randomStack = missingStacks.get(player.getRandom().nextInt(missingStacks.size()));
@@ -86,7 +88,7 @@ public class DimensionalItemGate {
 					break;
 				}
 			} else {
-				List<ItemStack> matchingStacks = recipe.getMatchingStacks(stackList, recipe);
+				List<ItemStack> matchingStacks = gatedRecipe.getMatchingStacks(stackList, gatedRecipe);
 				if (!matchingStacks.isEmpty()) {
 					if (event.getEntity() instanceof Player player) {
 						ItemStack randomStack = matchingStacks.get(player.getRandom().nextInt(matchingStacks.size()));

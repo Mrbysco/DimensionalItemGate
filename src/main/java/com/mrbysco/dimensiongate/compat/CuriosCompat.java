@@ -7,6 +7,7 @@ import top.theillusivec4.curios.api.CuriosApi;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"UnstableApiUsage", "removal", "deprecation"})
 public class CuriosCompat {
 	public static List<ItemStack> getCuriosStacks(LivingEntity livingEntity) {
 		List<ItemStack> stackList = new ArrayList<>();
