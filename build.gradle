@@ -127,7 +127,7 @@ if (System.getenv().CURSEFORGE_KEY) {
         mainFile.changelog = file("$project.rootDir/changelog.md")
         mainFile.changelogType = 'markdown'
 
-//        mainFile.addOptional("curios")
+        mainFile.addOptional("curios")
     }
 }
 
@@ -143,9 +143,9 @@ if (System.getenv().MODRINTH_KEY) {
         gameVersions = ["${mc_version}"]
         loaders = ["neoforge"]
 
-//        dependencies {
-//            optional.project "curios"
-//        }
+        dependencies {
+            optional.project "curios"
+        }
     }
 }
 
