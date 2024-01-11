@@ -17,9 +17,8 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.common.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
-import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -66,8 +65,8 @@ public class GatedItemRecipe implements Recipe<Container> {
 			if (recipe.getIngredients().stream().anyMatch(ingredient -> ingredient.test(stack))) {
 				matchingStacks.add(stack);
 			}
-			if (stack.getCapability(Capabilities.ITEM_HANDLER).isPresent()) {
-				IItemHandler handler = stack.getCapability(Capabilities.ITEM_HANDLER).orElse(null);
+			IItemHandler handler = stack.getCapability(Capabilities.ItemHandler.ITEM);
+			if (handler != null) {
 				for (int i = 0; i < handler.getSlots(); i++) {
 					ItemStack slotStack = handler.getStackInSlot(i);
 					if (recipe.getIngredients().stream().anyMatch(ingredient -> ingredient.test(slotStack))) {
@@ -90,8 +89,8 @@ public class GatedItemRecipe implements Recipe<Container> {
 			if (stacks.stream().noneMatch(stack -> {
 				List<ItemStack> stackList = new ArrayList<>();
 				stackList.add(stack);
-				IItemHandler handler = stack.getCapability(Capabilities.ITEM_HANDLER).orElse(null);
-				if (stack.getCapability(Capabilities.ITEM_HANDLER).isPresent()) {
+				IItemHandler handler = stack.getCapability(Capabilities.ItemHandler.ITEM);
+				if (handler != null) {
 					for (int i = 0; i < handler.getSlots(); i++) {
 						ItemStack slotStack = handler.getStackInSlot(i);
 						if (!slotStack.isEmpty()) {
@@ -143,15 +142,22 @@ public class GatedItemRecipe implements Recipe<Container> {
 	}
 
 	public static class Serializer implements RecipeSerializer<GatedItemRecipe> {
-		private static final Codec<GatedItemRecipe> CODEC = RawGatedRecipe.CODEC.flatXmap(rawLootRecipe -> {
-			return DataResult.success(new GatedItemRecipe(
-					rawLootRecipe.ingredientNonNullList,
-					rawLootRecipe.dimension,
-					rawLootRecipe.required
-			));
-		}, recipe -> {
-			throw new NotImplementedException("Serializing GatedItemRecipe is not implemented yet.");
-		});
+
+		private static final Codec<GatedItemRecipe> CODEC = RecordCodecBuilder.create(
+				instance -> instance.group(
+								Ingredient.CODEC_NONEMPTY.listOf().fieldOf("ingredients").flatXmap((array) -> {
+									Ingredient[] aingredient = (Ingredient[]) array.toArray(Ingredient[]::new);
+									if (aingredient.length == 0) {
+										return DataResult.error(() -> "No items in Gated Item Recipe");
+									} else {
+										return DataResult.success(NonNullList.of(Ingredient.EMPTY, aingredient));
+									}
+								}, DataResult::success).forGetter(recipe -> recipe.ingredients),
+								Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(recipe -> recipe.dimension),
+								Codec.BOOL.optionalFieldOf("required", false).forGetter(recipe -> recipe.required)
+						)
+						.apply(instance, GatedItemRecipe::new)
+		);
 
 		@Override
 		public Codec<GatedItemRecipe> codec() {
@@ -181,26 +187,6 @@ public class GatedItemRecipe implements Recipe<Container> {
 
 			buffer.writeResourceKey(recipe.dimension);
 			buffer.writeBoolean(recipe.required);
-		}
-
-		static record RawGatedRecipe(
-				NonNullList<Ingredient> ingredientNonNullList, ResourceKey<Level> dimension, boolean required
-		) {
-			public static final Codec<RawGatedRecipe> CODEC = RecordCodecBuilder.create(
-					instance -> instance.group(
-									Ingredient.CODEC_NONEMPTY.listOf().fieldOf("ingredients").flatXmap((array) -> {
-										Ingredient[] aingredient = (Ingredient[]) array.toArray(Ingredient[]::new);
-										if (aingredient.length == 0) {
-											return DataResult.error(() -> "No items in Gated Item Recipe");
-										} else {
-											return DataResult.success(NonNullList.of(Ingredient.EMPTY, aingredient));
-										}
-									}, DataResult::success).forGetter(recipe -> recipe.ingredientNonNullList),
-									Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(recipe -> recipe.dimension),
-									Codec.BOOL.optionalFieldOf("required", false).forGetter(recipe -> recipe.required)
-							)
-							.apply(instance, RawGatedRecipe::new)
-			);
 		}
 	}
 }

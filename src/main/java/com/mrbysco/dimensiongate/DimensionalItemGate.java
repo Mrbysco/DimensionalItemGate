@@ -13,12 +13,11 @@ import net.minecraft.world.entity.vehicle.ContainerEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -30,9 +29,7 @@ public class DimensionalItemGate {
 	public static final Logger LOGGER = LogUtils.getLogger();
 
 
-	public DimensionalItemGate() {
-		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
-
+	public DimensionalItemGate(IEventBus eventBus) {
 		GatedRecipes.RECIPE_TYPES.register(eventBus);
 		GatedRecipes.RECIPE_SERIALIZERS.register(eventBus);
 
