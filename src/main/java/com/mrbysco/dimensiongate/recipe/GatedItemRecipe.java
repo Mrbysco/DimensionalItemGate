@@ -86,24 +86,30 @@ public class GatedItemRecipe implements Recipe<Container> {
 			return List.of(Items.BARRIER.getDefaultInstance());
 		}
 
-		for (Ingredient ingredient : getIngredients()) {
-			if (stacks.stream().noneMatch(stack -> {
-				List<ItemStack> stackList = new ArrayList<>();
-				stackList.add(stack);
-				IItemHandler handler = stack.getCapability(Capabilities.ITEM_HANDLER).orElse(null);
-				if (stack.getCapability(Capabilities.ITEM_HANDLER).isPresent()) {
-					for (int i = 0; i < handler.getSlots(); i++) {
-						ItemStack slotStack = handler.getStackInSlot(i);
-						if (!slotStack.isEmpty()) {
-							stackList.add(slotStack);
+		List<Ingredient> missingIngredients = new ArrayList<>(getIngredients());
+		if(!stacks.isEmpty()) {
+			missingIngredients.removeIf(ingredient -> {
+				if (stacks.stream().anyMatch(ingredient))
+					return true;
+				for (ItemStack stack : stacks) {
+					IItemHandler handler = stack.getCapability(Capabilities.ITEM_HANDLER).orElse(null);
+					if (handler != null) {
+						for (int i = 0; i < handler.getSlots(); i++) {
+							ItemStack slotStack = handler.getStackInSlot(i);
+							if (ingredient.test(slotStack)) {
+								return true;
+							}
 						}
 					}
 				}
 
-				return stackList.stream().noneMatch(ingredient);
-			})) {
-				missingStacks.add(ingredient.getItems()[0]);
-			}
+				return false;
+			});
+		}
+
+		if (!missingIngredients.isEmpty()) {
+			missingIngredients.forEach(ingredient -> missingStacks.add(ingredient.getItems()[0]));
+			return missingStacks;
 		}
 
 		return missingStacks;
