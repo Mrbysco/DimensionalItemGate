@@ -54,7 +54,6 @@ public class GatedItemRecipe implements Recipe<Container> {
 		return false;
 	}
 
-	@SuppressWarnings("DataFlowIssue")
 	public List<ItemStack> getMatchingStacks(List<ItemStack> stacks, GatedItemRecipe recipe) {
 		List<ItemStack> matchingStacks = new ArrayList<>();
 		if (getIngredients().stream().anyMatch(Ingredient::isEmpty)) {
@@ -87,7 +86,26 @@ public class GatedItemRecipe implements Recipe<Container> {
 		}
 
 		List<Ingredient> missingIngredients = new ArrayList<>(getIngredients());
-		missingIngredients.removeIf(ingredient -> stacks.stream().anyMatch(ingredient));
+		if(!stacks.isEmpty()) {
+			missingIngredients.removeIf(ingredient -> {
+				if (stacks.stream().anyMatch(ingredient))
+					return true;
+				for (ItemStack stack : stacks) {
+					IItemHandler handler = stack.getCapability(Capabilities.ItemHandler.ITEM);
+					if (handler != null) {
+						for (int i = 0; i < handler.getSlots(); i++) {
+							ItemStack slotStack = handler.getStackInSlot(i);
+							if (ingredient.test(slotStack)) {
+								return true;
+							}
+						}
+					}
+				}
+
+				return false;
+			});
+		}
+
 		if (!missingIngredients.isEmpty()) {
 			missingIngredients.forEach(ingredient -> missingStacks.add(ingredient.getItems()[0]));
 			return missingStacks;
