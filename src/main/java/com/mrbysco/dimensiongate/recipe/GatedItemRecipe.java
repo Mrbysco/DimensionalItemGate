@@ -9,6 +9,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -50,7 +51,7 @@ public class GatedItemRecipe implements Recipe<Container> {
 	public boolean matches(Container container, Level level) {
 		//Unused please use getMatchingStacks instead as it will give you the stacks that match the recipe
 
-		return true;
+		return false;
 	}
 
 	@SuppressWarnings("DataFlowIssue")
@@ -85,24 +86,11 @@ public class GatedItemRecipe implements Recipe<Container> {
 			return List.of(Items.BARRIER.getDefaultInstance());
 		}
 
-		for (Ingredient ingredient : getIngredients()) {
-			if (stacks.stream().noneMatch(stack -> {
-				List<ItemStack> stackList = new ArrayList<>();
-				stackList.add(stack);
-				IItemHandler handler = stack.getCapability(Capabilities.ItemHandler.ITEM);
-				if (handler != null) {
-					for (int i = 0; i < handler.getSlots(); i++) {
-						ItemStack slotStack = handler.getStackInSlot(i);
-						if (!slotStack.isEmpty()) {
-							stackList.add(slotStack);
-						}
-					}
-				}
-
-				return stackList.stream().noneMatch(ingredient);
-			})) {
-				missingStacks.add(ingredient.getItems()[0]);
-			}
+		List<Ingredient> missingIngredients = new ArrayList<>(getIngredients());
+		missingIngredients.removeIf(ingredient -> stacks.stream().anyMatch(ingredient));
+		if (!missingIngredients.isEmpty()) {
+			missingIngredients.forEach(ingredient -> missingStacks.add(ingredient.getItems()[0]));
+			return missingStacks;
 		}
 
 		return missingStacks;
@@ -146,7 +134,7 @@ public class GatedItemRecipe implements Recipe<Container> {
 		private static final Codec<GatedItemRecipe> CODEC = RecordCodecBuilder.create(
 				instance -> instance.group(
 								Ingredient.CODEC_NONEMPTY.listOf().fieldOf("ingredients").flatXmap((array) -> {
-									Ingredient[] aingredient = (Ingredient[]) array.toArray(Ingredient[]::new);
+									Ingredient[] aingredient = array.toArray(Ingredient[]::new);
 									if (aingredient.length == 0) {
 										return DataResult.error(() -> "No items in Gated Item Recipe");
 									} else {
@@ -154,7 +142,7 @@ public class GatedItemRecipe implements Recipe<Container> {
 									}
 								}, DataResult::success).forGetter(recipe -> recipe.ingredients),
 								Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(recipe -> recipe.dimension),
-								Codec.BOOL.optionalFieldOf("required", false).forGetter(recipe -> recipe.required)
+								ExtraCodecs.strictOptionalField(Codec.BOOL, "required", false).forGetter(recipe -> recipe.required)
 						)
 						.apply(instance, GatedItemRecipe::new)
 		);

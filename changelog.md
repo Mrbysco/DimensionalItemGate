@@ -1,1 +1,2 @@
-* Initial update to 1.20.4
+* Fix recipe serializer not working
+* Fix the missing item implementation
