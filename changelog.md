@@ -1,1 +1,1 @@
-* Initial 1.20 build
+* Fix the `require` check for entering a dimension
