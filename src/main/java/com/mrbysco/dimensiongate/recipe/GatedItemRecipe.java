@@ -2,14 +2,16 @@ package com.mrbysco.dimensiongate.recipe;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mrbysco.dimensiongate.DimensionalItemGate;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -20,7 +22,6 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +87,7 @@ public class GatedItemRecipe implements Recipe<Container> {
 		}
 
 		List<Ingredient> missingIngredients = new ArrayList<>(getIngredients());
-		if(!stacks.isEmpty()) {
+		if (!stacks.isEmpty()) {
 			missingIngredients.removeIf(ingredient -> {
 				if (stacks.stream().anyMatch(ingredient))
 					return true;
@@ -115,12 +116,12 @@ public class GatedItemRecipe implements Recipe<Container> {
 	}
 
 	@Override
-	public ItemStack assemble(Container inventory, RegistryAccess registryAccess) {
-		return getResultItem(registryAccess).copy();
+	public ItemStack assemble(Container container, HolderLookup.Provider provider) {
+		return getResultItem(provider).copy();
 	}
 
 	@Override
-	public ItemStack getResultItem(RegistryAccess registryAccess) {
+	public ItemStack getResultItem(HolderLookup.Provider provider) {
 		return result;
 	}
 
@@ -149,7 +150,7 @@ public class GatedItemRecipe implements Recipe<Container> {
 
 	public static class Serializer implements RecipeSerializer<GatedItemRecipe> {
 
-		private static final Codec<GatedItemRecipe> CODEC = RecordCodecBuilder.create(
+		private static final MapCodec<GatedItemRecipe> CODEC = RecordCodecBuilder.mapCodec(
 				instance -> instance.group(
 								Ingredient.CODEC_NONEMPTY.listOf().fieldOf("ingredients").flatXmap((array) -> {
 									Ingredient[] aingredient = array.toArray(Ingredient[]::new);
@@ -160,39 +161,42 @@ public class GatedItemRecipe implements Recipe<Container> {
 									}
 								}, DataResult::success).forGetter(recipe -> recipe.ingredients),
 								Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(recipe -> recipe.dimension),
-								ExtraCodecs.strictOptionalField(Codec.BOOL, "required", false).forGetter(recipe -> recipe.required)
+								Codec.BOOL.optionalFieldOf("required", false).forGetter(recipe -> recipe.required)
 						)
 						.apply(instance, GatedItemRecipe::new)
 		);
+		public static final StreamCodec<RegistryFriendlyByteBuf, GatedItemRecipe> STREAM_CODEC = StreamCodec.of(
+				GatedItemRecipe.Serializer::toNetwork, GatedItemRecipe.Serializer::fromNetwork
+		);
 
 		@Override
-		public Codec<GatedItemRecipe> codec() {
+		public MapCodec<GatedItemRecipe> codec() {
 			return CODEC;
 		}
 
-		@Nullable
 		@Override
-		public GatedItemRecipe fromNetwork(FriendlyByteBuf buffer) {
-			int i = buffer.readVarInt();
-			NonNullList<Ingredient> nonnulllist = NonNullList.withSize(i, Ingredient.EMPTY);
-			for (int j = 0; j < nonnulllist.size(); ++j) {
-				nonnulllist.set(j, Ingredient.fromNetwork(buffer));
-			}
+		public StreamCodec<RegistryFriendlyByteBuf, GatedItemRecipe> streamCodec() {
+			return STREAM_CODEC;
+		}
 
-			ResourceKey<Level> dimension = buffer.readResourceKey(Registries.DIMENSION);
-			boolean required = buffer.readBoolean();
+		private static GatedItemRecipe fromNetwork(RegistryFriendlyByteBuf buf) {
+			int i = buf.readVarInt();
+			NonNullList<Ingredient> nonnulllist = NonNullList.withSize(i, Ingredient.EMPTY);
+			nonnulllist.replaceAll(ingredient -> Ingredient.CONTENTS_STREAM_CODEC.decode(buf));
+			ResourceKey<Level> dimension = buf.readResourceKey(Registries.DIMENSION);
+			boolean required = buf.readBoolean();
 			return new GatedItemRecipe(nonnulllist, dimension, required);
 		}
 
-		@Override
-		public void toNetwork(FriendlyByteBuf buffer, GatedItemRecipe recipe) {
-			buffer.writeVarInt(recipe.ingredients.size());
+		private static void toNetwork(RegistryFriendlyByteBuf buf, GatedItemRecipe recipe) {
+			buf.writeVarInt(recipe.ingredients.size());
+
 			for (Ingredient ingredient : recipe.ingredients) {
-				ingredient.toNetwork(buffer);
+				Ingredient.CONTENTS_STREAM_CODEC.encode(buf, ingredient);
 			}
 
-			buffer.writeResourceKey(recipe.dimension);
-			buffer.writeBoolean(recipe.required);
+			buf.writeResourceKey(recipe.dimension);
+			buf.writeBoolean(recipe.required);
 		}
 	}
 }
