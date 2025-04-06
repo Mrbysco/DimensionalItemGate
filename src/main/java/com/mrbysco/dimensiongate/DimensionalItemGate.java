@@ -7,6 +7,8 @@ import com.mrbysco.dimensiongate.recipe.GatedRecipes;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -46,24 +48,27 @@ public class DimensionalItemGate {
 			if (event.getEntity() instanceof ItemEntity itemEntity) {
 				stackList.add(itemEntity.getItem());
 			} else if (event.getEntity() instanceof Player player) {
-				player.getInventory().items.forEach(stack -> {
+				player.getInventory().getNonEquipmentItems().forEach(stack -> {
 					if (!stack.isEmpty()) stackList.add(stack);
 				});
-				player.getInventory().armor.forEach(stack -> {
+				for (EquipmentSlot slot : EquipmentSlotGroup.ARMOR) {
+					ItemStack stack = player.getItemBySlot(slot);
 					if (!stack.isEmpty()) stackList.add(stack);
-				});
-				player.getInventory().offhand.forEach(stack -> {
+				}
+				for (EquipmentSlot slot : EquipmentSlotGroup.OFFHAND) {
+					ItemStack stack = player.getItemBySlot(slot);
 					if (!stack.isEmpty()) stackList.add(stack);
-				});
+				}
 				if (ModList.get().isLoaded("curios")) {
 					CuriosCompat.getCuriosStacks(player).forEach(stack -> {
 						if (!stack.isEmpty()) stackList.add(stack);
 					});
 				}
 			} else if (event.getEntity() instanceof LivingEntity livingEntity) {
-				livingEntity.getAllSlots().forEach(stack -> {
+				for (EquipmentSlot equipmentslot : EquipmentSlot.VALUES) {
+					ItemStack stack = livingEntity.getItemBySlot(equipmentslot);
 					if (!stack.isEmpty()) stackList.add(stack);
-				});
+				}
 				if (ModList.get().isLoaded("curios")) {
 					CuriosCompat.getCuriosStacks(livingEntity).forEach(stack -> {
 						if (!stack.isEmpty()) stackList.add(stack);
@@ -75,11 +80,9 @@ public class DimensionalItemGate {
 
 			List<RecipeHolder<GatedItemRecipe>> recipes = serverLevel.recipeAccess().recipeMap().byType(GatedRecipes.GATED_ITEM_TYPE.get()).stream()
 					.filter(recipeHolder -> {
-						System.out.println(recipeHolder.id().location());
 						return recipeHolder.value().getDimension().location().equals(event.getDimension().location());
 					}).toList();
 			for (var recipe : recipes) {
-				System.out.println(recipe.id().location());
 				GatedItemRecipe gatedRecipe = recipe.value();
 				if (gatedRecipe.isRequired()) {
 					List<ItemStack> missingStacks = gatedRecipe.getMissingStacks(stackList, gatedRecipe);
