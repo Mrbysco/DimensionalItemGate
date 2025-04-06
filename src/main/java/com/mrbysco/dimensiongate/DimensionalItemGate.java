@@ -74,12 +74,8 @@ public class DimensionalItemGate {
 			}
 
 			List<RecipeHolder<GatedItemRecipe>> recipes = serverLevel.recipeAccess().recipeMap().byType(GatedRecipes.GATED_ITEM_TYPE.get()).stream()
-					.filter(recipeHolder -> {
-						System.out.println(recipeHolder.id().location());
-						return recipeHolder.value().getDimension().location().equals(event.getDimension().location());
-					}).toList();
+					.filter(recipeHolder -> recipeHolder.value().getDimension().location().equals(event.getDimension().location())).toList();
 			for (var recipe : recipes) {
-				System.out.println(recipe.id().location());
 				GatedItemRecipe gatedRecipe = recipe.value();
 				if (gatedRecipe.isRequired()) {
 					List<ItemStack> missingStacks = gatedRecipe.getMissingStacks(stackList, gatedRecipe);
