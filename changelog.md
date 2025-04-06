@@ -1,1 +1,1 @@
-* Remove test gated items
+* Remove leftover debug log messages
