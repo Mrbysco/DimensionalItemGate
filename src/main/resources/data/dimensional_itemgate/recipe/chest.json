@@ -1,7 +1,0 @@
-{
-  "type": "dimensional_itemgate:recipe",
-  "ingredients": [
-    "#c:chests/wooden"
-  ],
-  "dimension": "minecraft:the_nether"
-}
