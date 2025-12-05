@@ -14,7 +14,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.IEventBus;
@@ -25,7 +24,6 @@ import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @Mod(DimensionalItemGate.MOD_ID)
@@ -79,9 +77,9 @@ public class DimensionalItemGate {
 			}
 
 			List<RecipeHolder<GatedItemRecipe>> recipes = serverLevel.recipeAccess().recipeMap().byType(GatedRecipes.GATED_ITEM_TYPE.get()).stream()
-					.filter(recipeHolder -> {
-						return recipeHolder.value().getDimension().location().equals(event.getDimension().location());
-					}).toList();
+					.filter(recipeHolder ->
+							recipeHolder.value().getDimension().location().equals(event.getDimension().location())
+					).toList();
 			for (var recipe : recipes) {
 				GatedItemRecipe gatedRecipe = recipe.value();
 				if (gatedRecipe.isRequired()) {
