@@ -4,15 +4,12 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mrbysco.dimensiongate.DimensionalItemGate;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
@@ -24,7 +21,8 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -90,10 +88,10 @@ public class GatedItemRecipe implements Recipe<CraftingInput> {
 			if (ingredients.stream().anyMatch(ingredient -> ingredient.test(stack))) {
 				matchingStacks.add(stack);
 			}
-			IItemHandler handler = stack.getCapability(Capabilities.ItemHandler.ITEM);
+			ResourceHandler<ItemResource> handler = stack.getCapability(Capabilities.Item.ITEM, null);
 			if (handler != null) {
-				for (int i = 0; i < handler.getSlots(); i++) {
-					ItemStack slotStack = handler.getStackInSlot(i);
+				for (int i = 0; i < handler.size(); i++) {
+					ItemStack slotStack = handler.getResource(i).toStack();
 					if (ingredients.stream().anyMatch(ingredient -> ingredient.test(slotStack))) {
 						matchingStacks.add(slotStack);
 					}
@@ -115,10 +113,10 @@ public class GatedItemRecipe implements Recipe<CraftingInput> {
 			missingIngredients.removeIf(ingredient -> {
 				if (stacks.stream().anyMatch(ingredient)) return true;
 				for (ItemStack stack : stacks) {
-					IItemHandler handler = stack.getCapability(Capabilities.ItemHandler.ITEM);
+					ResourceHandler<ItemResource> handler = stack.getCapability(Capabilities.Item.ITEM, null);
 					if (handler != null) {
-						for (int i = 0; i < handler.getSlots(); i++) {
-							ItemStack slotStack = handler.getStackInSlot(i);
+						for (int i = 0; i < handler.size(); i++) {
+							ItemStack slotStack = handler.getResource(i).toStack();
 							if (ingredient.test(slotStack)) {
 								return true;
 							}
