@@ -4,7 +4,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mrbysco.dimensiongate.DimensionalItemGate;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -29,6 +28,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GatedItemRecipe implements Recipe<CraftingInput> {
+	private static final MapCodec<GatedItemRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+					Codec.lazyInitialized(() -> Ingredient.CODEC.listOf(1, 9)).fieldOf("ingredients").forGetter(recipe -> recipe.ingredients),
+					Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(recipe -> recipe.dimension),
+					Codec.BOOL.optionalFieldOf("required", false).forGetter(recipe -> recipe.required))
+			.apply(instance, GatedItemRecipe::new));
+
+	public static final StreamCodec<RegistryFriendlyByteBuf, GatedItemRecipe> STREAM_CODEC = StreamCodec.composite(
+			Ingredient.CONTENTS_STREAM_CODEC.apply(ByteBufCodecs.list()),
+			recipe -> recipe.ingredients,
+			ResourceKey.streamCodec(Registries.DIMENSION),
+			recipe -> recipe.dimension,
+			ByteBufCodecs.BOOL,
+			recipe -> recipe.required,
+			GatedItemRecipe::new
+	);
+	public static final RecipeSerializer<GatedItemRecipe> SERIALIZER = new RecipeSerializer<>(CODEC, STREAM_CODEC);
+
 	protected final List<Ingredient> ingredients;
 	protected final ResourceKey<Level> dimension;
 	protected final boolean required;
@@ -68,6 +84,11 @@ public class GatedItemRecipe implements Recipe<CraftingInput> {
 	@Override
 	public boolean isSpecial() {
 		return true;
+	}
+
+	@Override
+	public boolean showNotification() {
+		return false;
 	}
 
 	@Override
@@ -141,10 +162,14 @@ public class GatedItemRecipe implements Recipe<CraftingInput> {
 	}
 
 	@Override
-	public ItemStack assemble(CraftingInput input, HolderLookup.Provider provider) {
+	public ItemStack assemble(CraftingInput input) {
 		return ItemStack.EMPTY;
 	}
 
+	@Override
+	public String group() {
+		return "";
+	}
 
 	public ResourceKey<Level> getDimension() {
 		return this.dimension;
@@ -152,34 +177,5 @@ public class GatedItemRecipe implements Recipe<CraftingInput> {
 
 	public boolean isRequired() {
 		return required;
-	}
-
-	public static class Serializer implements RecipeSerializer<GatedItemRecipe> {
-
-		private static final MapCodec<GatedItemRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-						Codec.lazyInitialized(() -> Ingredient.CODEC.listOf(1, 9)).fieldOf("ingredients").forGetter(recipe -> recipe.ingredients),
-						Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(recipe -> recipe.dimension),
-						Codec.BOOL.optionalFieldOf("required", false).forGetter(recipe -> recipe.required))
-				.apply(instance, GatedItemRecipe::new));
-
-		public static final StreamCodec<RegistryFriendlyByteBuf, GatedItemRecipe> STREAM_CODEC = StreamCodec.composite(
-				Ingredient.CONTENTS_STREAM_CODEC.apply(ByteBufCodecs.list()),
-				recipe -> recipe.ingredients,
-				ResourceKey.streamCodec(Registries.DIMENSION),
-				recipe -> recipe.dimension,
-				ByteBufCodecs.BOOL,
-				recipe -> recipe.required,
-				GatedItemRecipe::new
-		);
-
-		@Override
-		public MapCodec<GatedItemRecipe> codec() {
-			return CODEC;
-		}
-
-		@Override
-		public StreamCodec<RegistryFriendlyByteBuf, GatedItemRecipe> streamCodec() {
-			return STREAM_CODEC;
-		}
 	}
 }

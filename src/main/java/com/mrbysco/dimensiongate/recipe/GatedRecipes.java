@@ -4,6 +4,7 @@ import com.mrbysco.dimensiongate.DimensionalItemGate;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
@@ -15,5 +16,5 @@ public class GatedRecipes {
 
 	public static final Supplier<RecipeType<GatedItemRecipe>> GATED_ITEM_TYPE = RECIPE_TYPES.register("recipe", () -> new RecipeType<>() {
 	});
-	public static final Supplier<GatedItemRecipe.Serializer> GATED_ITEM_SERIALIZER = RECIPE_SERIALIZERS.register("recipe", GatedItemRecipe.Serializer::new);
+	public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<GatedItemRecipe>> GATED_ITEM_SERIALIZER = RECIPE_SERIALIZERS.register("recipe", () -> GatedItemRecipe.SERIALIZER);
 }

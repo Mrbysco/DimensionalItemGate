@@ -87,7 +87,7 @@ public class DimensionalItemGate {
 					if (!missingStacks.isEmpty()) {
 						if (event.getEntity() instanceof Player player) {
 							ItemStack randomStack = missingStacks.get(player.getRandom().nextInt(missingStacks.size()));
-							player.displayClientMessage(Component.translatable("dimensional_itemgate.gated.message2", randomStack.getDisplayName()).withStyle(ChatFormatting.RED), true);
+							player.sendOverlayMessage(Component.translatable("dimensional_itemgate.gated.message2", randomStack.getDisplayName()).withStyle(ChatFormatting.RED));
 						}
 						event.setCanceled(true);
 					}
@@ -96,7 +96,7 @@ public class DimensionalItemGate {
 					if (!matchingStacks.isEmpty()) {
 						if (event.getEntity() instanceof Player player) {
 							ItemStack randomStack = matchingStacks.get(player.getRandom().nextInt(matchingStacks.size()));
-							player.displayClientMessage(Component.translatable("dimensional_itemgate.gated.message", randomStack.getDisplayName()).withStyle(ChatFormatting.RED), true);
+							player.sendOverlayMessage(Component.translatable("dimensional_itemgate.gated.message", randomStack.getDisplayName()).withStyle(ChatFormatting.RED));
 						}
 						event.setCanceled(true);
 					}
