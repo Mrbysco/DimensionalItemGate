@@ -78,7 +78,7 @@ public class DimensionalItemGate {
 
 			List<RecipeHolder<GatedItemRecipe>> recipes = serverLevel.recipeAccess().recipeMap().byType(GatedRecipes.GATED_ITEM_TYPE.get()).stream()
 					.filter(recipeHolder ->
-							recipeHolder.value().getDimension().location().equals(event.getDimension().location())
+							recipeHolder.value().getDimension().identifier().equals(event.getDimension().identifier())
 					).toList();
 			for (var recipe : recipes) {
 				GatedItemRecipe gatedRecipe = recipe.value();
